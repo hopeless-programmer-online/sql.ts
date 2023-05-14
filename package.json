@@ -1,0 +1,14 @@
+{
+  "name": "sql.ts",
+  "version": "0.1.0",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hopeless-programmer-online/sql.ts.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hopeless-programmer-online/sql.ts/issues"
+  },
+  "homepage": "https://github.com/hopeless-programmer-online/sql.ts#readme"
+}
