@@ -1,13 +1,18 @@
 import * as sql from './sql'
 
-test(`Empty database`, () => {
-    const db = sql.database(`MY_DATABASE`)
+test(`Smoke.`, () => {
+    const db = sql.database(`FORUM`)
+        .table(`User`)
+        .end()
 
     // static checks
-    const database_name : `MY_DATABASE` = db.name
-    const database_tables : {} = db.tables
+    const database_type : typeof sql.Database[typeof sql.type] = db[sql.type]
+    const database_name : `FORUM` = db.name
+    const database_tables : {
+        User : { name : `User` }
+    } = db.tables
 
-    expect(db[sql.type]).toBe(sql.Database[sql.type])
-    expect(database_name).toBe(`MY_DATABASE`)
+    expect(database_type).toBe(sql.Database[sql.type])
+    expect(database_name).toBe(`FORUM`)
     expect(database_tables).toMatchObject({})
 })
