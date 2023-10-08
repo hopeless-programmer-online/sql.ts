@@ -2,7 +2,7 @@ export const type = Symbol(`sql.type`)
 
 export type IDatabase = Database<string, ITables>
 
-export type ITable = Table<string>
+export type ITable = Table<string, IAttributes>
 
 export type ITables = {
     [name : string] : ITable
@@ -10,13 +10,19 @@ export type ITables = {
 
 export type EmptyTable<
     Name extends string,
-> = Table<Name>
+> = Table<Name, {}>
 
 export type ExtendedTables<
     Tables extends ITables,
     Name extends string,
 > = Tables & {
     [name in Name] : EmptyTable<Name>
+}
+
+export type IAttribute = Attribute<string>
+
+export type IAttributes = {
+    [name : string] : IAttribute
 }
 
 export class Database<
@@ -77,17 +83,22 @@ export class DatabaseBuilder<
 
 export class Table<
     Name extends string,
+    Attributes extends IAttributes,
 > {
     public static readonly [type] : unique symbol = Symbol(`sql.Table`)
 
     public readonly name : Name
+    public readonly attributes : Attributes
 
     public constructor({
         name,
+        attributes,
     } : {
         name : Name
+        attributes : Attributes
     }) {
         this.name = name
+        this.attributes = attributes
     }
 
     public get [type]() : typeof Table[typeof type] {
@@ -131,6 +142,26 @@ export class TableBuilder<
     }
 }
 
+export class Attribute<
+    Name extends string,
+> {
+    public static readonly [type] : unique symbol = Symbol(`sql.Attribute`)
+
+    public readonly name : Name
+
+    public constructor({
+        name,
+    } : {
+        name : Name
+    }) {
+        this.name = name
+    }
+
+    public get [type]() : typeof Attribute[typeof type] {
+        return Attribute[type]
+    }
+}
+
 /**
  * Creates an empty database.
  */
@@ -142,6 +173,9 @@ export function database<Name extends string>(name : Name) {
     return builder
 }
 
+/**
+ * Adds an empty table to the database.
+ */
 function add_empty_table<
     Database_ extends IDatabase,
     Name extends string,
@@ -149,6 +183,8 @@ function add_empty_table<
     database : Database_,
     name : Name,
 ) {
+    const attributes = {} as const
+    const table = new Table({ name, attributes })
     const new_database = new Database<
         Database_[`name`],
         ExtendedTables<Database_[`tables`], Name>
@@ -156,7 +192,7 @@ function add_empty_table<
         name : database.name,
         tables : {
             ...database.tables,
-            [name] : new Table({ name }),
+            [name] : table,
         } as ExtendedTables<Database_[`tables`], Name>, // @todo: remove hack
     })
     const builder = new TableBuilder({
