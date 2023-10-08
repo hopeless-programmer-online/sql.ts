@@ -71,22 +71,7 @@ export class DatabaseBuilder<
     >(
         name : Name,
     ) {
-        const database = new Database<
-            Database_[`name`],
-            ExtendedTables<Database_[`tables`], Name>
-        >({
-            name : this.database.name,
-            tables : {
-                ...this.database.tables,
-                [name] : new Table({ name }),
-            } as ExtendedTables<Database_[`tables`], Name>, // @todo: remove hack
-        })
-        const builder = new TableBuilder({
-            database,
-            current : name,
-        })
-
-        return builder
+        return add_empty_table(this.database, name)
     }
 }
 
@@ -137,6 +122,13 @@ export class TableBuilder<
     public end() {
         return this.database
     }
+    public table<
+        Name extends string,
+    >(
+        name : Name,
+    ) {
+        return add_empty_table(this.database, name)
+    }
 }
 
 /**
@@ -150,23 +142,27 @@ export function database<Name extends string>(name : Name) {
     return builder
 }
 
-const table = <
+function add_empty_table<
     Database_ extends IDatabase,
->(
-    database : Database_,
-) => <
     Name extends string,
 >(
+    database : Database_,
     name : Name,
-) => {
+) {
     const new_database = new Database<
         Database_[`name`],
-        Database_[`tables`] & { [name in Name] : Table<Name> }
+        ExtendedTables<Database_[`tables`], Name>
     >({
         name : database.name,
         tables : {
             ...database.tables,
             [name] : new Table({ name }),
-        } as Database_[`tables`] & { [name in Name] : Table<Name> }, // @todo: remove hack
+        } as ExtendedTables<Database_[`tables`], Name>, // @todo: remove hack
     })
+    const builder = new TableBuilder({
+        database : new_database,
+        current : name,
+    })
+
+    return builder
 }

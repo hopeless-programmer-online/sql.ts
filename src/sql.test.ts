@@ -3,6 +3,8 @@ import * as sql from './sql'
 test(`Smoke.`, () => {
     const db = sql.database(`FORUM`)
         .table(`User`)
+        .table(`Topic`)
+        .table(`Post`)
         .end()
 
     // static checks
@@ -10,6 +12,8 @@ test(`Smoke.`, () => {
     const database_name : `FORUM` = db.name
     const database_tables : {
         User : { name : `User` }
+        Topic : { name : `Topic` }
+        Post : { name : `Post` }
     } = db.tables
 
     expect(database_type).toBe(sql.Database[sql.type])
