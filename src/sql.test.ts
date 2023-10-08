@@ -1,63 +1,11 @@
-import { database, connect } from './sql'
+import * as sql from './sql'
 
-it(``, () => {
-    const db = database(`forum`)
-        .table(`User`)
-            .primary_key(`id`, `serial`)
-            .attribute(`login`, `text`)
-            .attribute(`registered`, `timestamp`)
-        .table(`Topic`)
-            .primary_key(`id`, `serial`)
-            .foreign_key(`author`, `User`, `id`)
-            .attribute(`title`, `text`)
-            .attribute(`content`, `text`)
-            .attribute(`created`, `timestamp`)
-        .table(`Post`)
-            .primary_key(`id`, `serial`)
-            .foreign_key(`author`, `User`, `id`)
-            .attribute(`content`, `text`)
-            .attribute(`created`, `timestamp`)
+test(``, () => {
+    const db = sql.database(`MY_DATABASE`)
 
     // static checks
-    db.name === `forum`
-    db.tables.User.name === `User`
-    db.tables.User.primary_keys.id.name === `id`
-    db.tables.User.attributes.id.name === `id`
-    db.tables.User.attributes.login.name === `login`
-    db.tables.Topic.name === `Topic`
-    db.tables.Topic.primary_keys.id.name === `id`
-    db.tables.Topic.attributes.title.name === `title`
-    db.tables.Topic.foreign_keys.author.table === `User`
-    db.tables.Topic.foreign_keys.author.key === `id`
+    const database_name : `MY_DATABASE` = db.name
 
-    expect(db.name).toBe(`forum`)
-    expect(db.tables.User.name).toBe(`User`)
-    expect(db.tables.User.primary_keys.id.name).toBe(`id`)
-    expect(db.tables.User.attributes.id.name).toBe(`id`)
-    expect(db.tables.User.attributes.login.name).toBe(`login`)
-    expect(db.tables.Topic.name).toBe(`Topic`)
-    expect(db.tables.Topic.primary_keys.id.name).toBe(`id`)
-    expect(db.tables.Topic.attributes.title.name).toBe(`title`)
-    expect(db.tables.Topic.foreign_keys.author.table).toBe(`User`)
-    expect(db.tables.Topic.foreign_keys.author.key).toBe(`id`)
-
-    const connection = connect(db)
-
-    const query = connection
-        .select(`Topic`, `author`)
-        .select(`Topic`, `title`)
-        .select(`User`, `id`)
-        .where(db => db.Topic.author.equal(db.User.id))
-        .end()
-
-    expect(`${query}`).toBe(
-        `SELECT Topic.author, Topic.title, User.id\n` +
-        `FROM Topic, User\n` +
-        `WHERE Topic.author == User.id;`
-    )
-
-    // query.selected[0].table === `Topic`
-    // query.selected[0].attribute === `title`
-    // query.selected[1].table === `User`
-    // query.selected[1].attribute === `login`
+    expect(db[sql.type]).toBe(sql.Database[sql.type])
+    expect(db.name).toBe(`MY_DATABASE`)
 })
