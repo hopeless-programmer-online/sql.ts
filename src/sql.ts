@@ -14,15 +14,22 @@ export type EmptyTable<
 
 export type ExtendedTables<
     Tables extends ITables,
-    Name extends string,
+    Table_ extends ITable,
 > = Tables & {
-    [name in Name] : EmptyTable<Name>
+    [name in Table_[`name`]] : Table_
 }
 
 export type IAttribute = Attribute<string>
 
 export type IAttributes = {
     [name : string] : IAttribute
+}
+
+export type ExtendedAttributes<
+    Attributes_ extends IAttributes,
+    Attribute_ extends IAttribute,
+> = Attributes_ & {
+    [name in Attribute_[`name`]] : Attribute_
 }
 
 export class Database<
@@ -140,6 +147,54 @@ export class TableBuilder<
     ) {
         return add_empty_table(this.database, name)
     }
+    public attribute<
+        AttributeName extends string,
+    >(
+        name : AttributeName,
+    ) {
+        const attribute = new Attribute({ name })
+        const current_table = this.database.tables[this.current]
+        const attributes = {
+            ...current_table.attributes,
+            [name] : attribute,
+        } as ExtendedAttributes<
+            Database_[`tables`][AttributeName][`attributes`],
+            Attribute<AttributeName>
+        >
+        const table = new Table({
+            name : current_table.name,
+            attributes,
+        })
+        const tables = {
+            ...this.database.tables,
+            [this.current] : table,
+        } as ExtendedTables<
+            Database_[`tables`],
+            Table<Name, ExtendedAttributes<
+                Database_[`tables`][AttributeName][`attributes`],
+                Attribute<AttributeName>
+            >>
+        >
+        const database = new Database<
+            Database_[`name`],
+            ExtendedTables<
+                Database_[`tables`],
+                Table<Name, ExtendedAttributes<
+                    Database_[`tables`][AttributeName][`attributes`],
+                    Attribute<AttributeName>
+                >>
+            >
+        >({
+            name : this.database.name,
+            tables,
+        })
+        const builder = new TableBuilder({
+            database,
+            current : this.current,
+        })
+
+        return builder
+    }
 }
 
 export class Attribute<
@@ -187,13 +242,13 @@ function add_empty_table<
     const table = new Table({ name, attributes })
     const new_database = new Database<
         Database_[`name`],
-        ExtendedTables<Database_[`tables`], Name>
+        ExtendedTables<Database_[`tables`], EmptyTable<Name>>
     >({
         name : database.name,
         tables : {
             ...database.tables,
             [name] : table,
-        } as ExtendedTables<Database_[`tables`], Name>, // @todo: remove hack
+        } as ExtendedTables<Database_[`tables`], EmptyTable<Name>>, // @todo: remove hack
     })
     const builder = new TableBuilder({
         database : new_database,
@@ -201,4 +256,14 @@ function add_empty_table<
     })
 
     return builder
+}
+
+function add_attribute<
+    Database_ extends IDatabase,
+    Name extends string,
+>(
+    database : Database_,
+    name : Name,
+){
+    const attribute = new Attribute({ name })
 }
