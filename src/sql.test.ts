@@ -3,15 +3,15 @@ import * as sql from './sql'
 test(`Smoke.`, () => {
     const db = sql.database(`FORUM`)
         .table(`User`)
-            .attribute(`id`, sql.Type.Integer)
+            .primary_key(`id`, sql.Type.Integer)
             .attribute(`login`, sql.Type.Text)
         .table(`Topic`)
-            .attribute(`id`, sql.Type.Integer)
+            .primary_key(`id`, sql.Type.Integer)
             .attribute(`author_id`, sql.Type.Integer)
             .attribute(`caption`, sql.Type.Text)
             .attribute(`text`, sql.Type.Text)
         .table(`Post`)
-            .attribute(`id`, sql.Type.Integer)
+            .primary_key(`id`, sql.Type.Integer)
             .attribute(`author_id`, sql.Type.Integer)
             .attribute(`text`, sql.Type.Text)
         .end()
@@ -27,6 +27,8 @@ test(`Smoke.`, () => {
     const user_table_name                 : `User`                            = db.tables.User.name
     const user_table_id_attribute_name    : `id`                              = db.tables.User.attributes.id.name
     const user_table_id_attribute_type    : sql.Type.Integer                  = db.tables.User.attributes.id.type
+    const user_table_id_primary_key_name  : `id`                              = db.tables.User.primary_keys.id.name
+    const user_table_id_primary_key_type  : sql.Type.Integer                  = db.tables.User.primary_keys.id.type
     const user_table_login_attribute_name : `login`                           = db.tables.User.attributes.login.name
     const user_table_login_attribute_type : sql.Type.Text                     = db.tables.User.attributes.login.type
 
@@ -34,6 +36,8 @@ test(`Smoke.`, () => {
     expect(user_table_name).toBe(`User`)
     expect(user_table_id_attribute_name).toBe(`id`)
     expect(user_table_id_attribute_type).toBe(sql.Type.Integer)
+    expect(user_table_id_primary_key_name).toBe(`id`)
+    expect(user_table_id_primary_key_type).toBe(sql.Type.Integer)
     expect(user_table_login_attribute_name).toBe(`login`)
     expect(user_table_login_attribute_type).toBe(sql.Type.Text)
 
@@ -41,6 +45,8 @@ test(`Smoke.`, () => {
     const topic_table_name                     : `Topic`                           = db.tables.Topic.name
     const topic_table_id_attribute_name        : `id`                              = db.tables.Topic.attributes.id.name
     const topic_table_id_attribute_type        : sql.Type.Integer                  = db.tables.Topic.attributes.id.type
+    const topic_table_id_primary_key_name      : `id`                              = db.tables.Topic.primary_keys.id.name
+    const topic_table_id_primary_key_type      : sql.Type.Integer                  = db.tables.Topic.primary_keys.id.type
     const topic_table_author_id_attribute_name : `author_id`                       = db.tables.Topic.attributes.author_id.name
     const topic_table_author_id_attribute_type : sql.Type.Integer                  = db.tables.Topic.attributes.author_id.type
     const topic_table_caption_attribute_name   : `caption`                         = db.tables.Topic.attributes.caption.name
@@ -52,6 +58,8 @@ test(`Smoke.`, () => {
     expect(topic_table_name).toBe(`Topic`)
     expect(topic_table_id_attribute_name).toBe(`id`)
     expect(topic_table_id_attribute_type).toBe(sql.Type.Integer)
+    expect(topic_table_id_primary_key_name).toBe(`id`)
+    expect(topic_table_id_primary_key_type).toBe(sql.Type.Integer)
     expect(topic_table_author_id_attribute_name).toBe(`author_id`)
     expect(topic_table_author_id_attribute_type).toBe(sql.Type.Integer)
     expect(topic_table_caption_attribute_name).toBe(`caption`)
@@ -63,6 +71,8 @@ test(`Smoke.`, () => {
     const post_table_name                     : `Post`                            = db.tables.Post.name
     const post_table_id_attribute_name        : `id`                              = db.tables.Post.attributes.id.name
     const post_table_id_attribute_type        : sql.Type.Integer                  = db.tables.Post.attributes.id.type
+    const post_table_id_primary_key_name      : `id`                              = db.tables.Post.primary_keys.id.name
+    const post_table_id_primary_key_type      : sql.Type.Integer                  = db.tables.Post.primary_keys.id.type
     const post_table_author_id_attribute_name : `author_id`                       = db.tables.Post.attributes.author_id.name
     const post_table_author_id_attribute_type : sql.Type.Integer                  = db.tables.Post.attributes.author_id.type
     const post_table_text_attribute_name      : `text`                            = db.tables.Post.attributes.text.name
@@ -72,6 +82,8 @@ test(`Smoke.`, () => {
     expect(post_table_name).toBe(`Post`)
     expect(post_table_id_attribute_name).toBe(`id`)
     expect(post_table_id_attribute_type).toBe(sql.Type.Integer)
+    expect(post_table_id_primary_key_name).toBe(`id`)
+    expect(post_table_id_primary_key_type).toBe(sql.Type.Integer)
     expect(post_table_author_id_attribute_name).toBe(`author_id`)
     expect(post_table_author_id_attribute_type).toBe(sql.Type.Integer)
     expect(post_table_text_attribute_name).toBe(`text`)

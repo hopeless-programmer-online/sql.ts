@@ -51,8 +51,34 @@ export type AttributeExtendedDatabaseTables<
 export type IPrimaryKey = PrimaryKey<string, Type>
 
 export type IPrimaryKeys = {
-    [name : string] : IAttribute
+    [name : string] : IPrimaryKey
 }
+
+export type ExtendedPrimaryKeys<
+    PrimaryKeys_ extends IPrimaryKeys,
+    PrimaryKey_ extends IPrimaryKey,
+> = PrimaryKeys_ & {
+    [name in PrimaryKey_[`name`]] : PrimaryKey_
+}
+
+export type PrimaryKeyExtendedDatabaseTables<
+    Database_ extends IDatabase,
+    Table_ extends string & keyof Database_[`tables`],
+    Attribute_ extends IAttribute
+> = ExtendedTables<
+    Database_[`tables`],
+    Table<
+        Table_,
+        ExtendedAttributes<
+            Database_[`tables`][Table_][`attributes`],
+            Attribute_
+        >,
+        ExtendedPrimaryKeys<
+            Database_[`tables`][Table_][`primary_keys`],
+            PrimaryKey<Attribute_[`name`], Attribute_[`type`]>
+        >
+    >
+>
 
 export class Database<
     Name extends string,
@@ -196,6 +222,47 @@ export class TableBuilder<
             ...this.database.tables,
             [this.current] : table,
         } as AttributeExtendedDatabaseTables<
+            Database_, Name,
+            Attribute<AttributeName, Type_>
+        >
+        const database = new Database({
+            name : this.database.name as Database_[`name`],
+            tables,
+        })
+        const builder = new TableBuilder({
+            database,
+            current : this.current,
+        })
+
+        return builder
+    }
+    public primary_key<
+        AttributeName extends string,
+        Type_ extends Type,
+    >(
+        name : AttributeName,
+        type : Type_,
+    ) {
+        const attribute = new Attribute({ name, type })
+        const primary_key = new PrimaryKey({ name, type })
+        const current_table = this.database.tables[this.current]
+        const attributes = {
+            ...current_table.attributes,
+            [name] : attribute,
+        }
+        const primary_keys = {
+            ...current_table.primary_keys,
+            [name] : primary_key,
+        }
+        const table = new Table({
+            name : current_table.name,
+            attributes,
+            primary_keys,
+        })
+        const tables = {
+            ...this.database.tables,
+            [this.current] : table,
+        } as PrimaryKeyExtendedDatabaseTables<
             Database_, Name,
             Attribute<AttributeName, Type_>
         >
