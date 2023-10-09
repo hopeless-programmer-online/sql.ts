@@ -19,7 +19,7 @@ export type ExtendedTables<
     [name in Table_[`name`]] : Table_
 }
 
-export type IAttribute = Attribute<string>
+export type IAttribute = Attribute<string, Type>
 
 export type IAttributes = {
     [name : string] : IAttribute
@@ -149,17 +149,19 @@ export class TableBuilder<
     }
     public attribute<
         AttributeName extends string,
+        Type_ extends Type,
     >(
         name : AttributeName,
+        type : Type_,
     ) {
-        const attribute = new Attribute({ name })
+        const attribute = new Attribute({ name, type })
         const current_table = this.database.tables[this.current]
         const attributes = {
             ...current_table.attributes,
             [name] : attribute,
         } as ExtendedAttributes<
-            Database_[`tables`][AttributeName][`attributes`],
-            Attribute<AttributeName>
+            Database_[`tables`][Name][`attributes`],
+            Attribute<AttributeName, Type_>
         >
         const table = new Table({
             name : current_table.name,
@@ -171,8 +173,8 @@ export class TableBuilder<
         } as ExtendedTables<
             Database_[`tables`],
             Table<Name, ExtendedAttributes<
-                Database_[`tables`][AttributeName][`attributes`],
-                Attribute<AttributeName>
+                Database_[`tables`][Name][`attributes`],
+                Attribute<AttributeName, Type_>
             >>
         >
         const database = new Database<
@@ -180,8 +182,8 @@ export class TableBuilder<
             ExtendedTables<
                 Database_[`tables`],
                 Table<Name, ExtendedAttributes<
-                    Database_[`tables`][AttributeName][`attributes`],
-                    Attribute<AttributeName>
+                    Database_[`tables`][Name][`attributes`],
+                    Attribute<AttributeName, Type_>
                 >>
             >
         >({
@@ -197,19 +199,29 @@ export class TableBuilder<
     }
 }
 
+export enum Type {
+    Integer,
+    Text,
+}
+
 export class Attribute<
     Name extends string,
+    Type_ extends Type,
 > {
     public static readonly [type] : unique symbol = Symbol(`sql.Attribute`)
 
     public readonly name : Name
+    public readonly type : Type_
 
     public constructor({
         name,
+        type,
     } : {
         name : Name
+        type : Type_
     }) {
         this.name = name
+        this.type = type
     }
 
     public get [type]() : typeof Attribute[typeof type] {
@@ -256,14 +268,4 @@ function add_empty_table<
     })
 
     return builder
-}
-
-function add_attribute<
-    Database_ extends IDatabase,
-    Name extends string,
->(
-    database : Database_,
-    name : Name,
-){
-    const attribute = new Attribute({ name })
 }
