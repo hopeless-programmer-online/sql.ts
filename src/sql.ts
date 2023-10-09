@@ -186,10 +186,7 @@ export class TableBuilder<
         const attributes = {
             ...current_table.attributes,
             [name] : attribute,
-        } as ExtendedAttributes<
-            Database_[`tables`][Name][`attributes`],
-            Attribute<AttributeName, Type_>
-        >
+        }
         const table = new Table({
             name : current_table.name,
             attributes,
@@ -202,14 +199,8 @@ export class TableBuilder<
             Database_, Name,
             Attribute<AttributeName, Type_>
         >
-        const database = new Database<
-            Database_[`name`],
-            AttributeExtendedDatabaseTables<
-                Database_, Name,
-                Attribute<AttributeName, Type_>
-            >
-        >({
-            name : this.database.name,
+        const database = new Database({
+            name : this.database.name as Database_[`name`],
             tables,
         })
         const builder = new TableBuilder({
