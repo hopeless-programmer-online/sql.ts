@@ -2,7 +2,7 @@ export const type = Symbol(`sql.type`)
 
 export type IDatabase = Database<string, ITables>
 
-export type ITable = Table<string, IAttributes>
+export type ITable = Table<string, IAttributes, IPrimaryKeys>
 
 export type ITables = {
     [name : string] : ITable
@@ -10,7 +10,7 @@ export type ITables = {
 
 export type EmptyTable<
     Name extends string,
-> = Table<Name, {}>
+> = Table<Name, {}, {}>
 
 export type ExtendedTables<
     Tables extends ITables,
@@ -30,6 +30,12 @@ export type ExtendedAttributes<
     Attribute_ extends IAttribute,
 > = Attributes_ & {
     [name in Attribute_[`name`]] : Attribute_
+}
+
+export type IPrimaryKey = PrimaryKey<string, Type>
+
+export type IPrimaryKeys = {
+    [name : string] : IAttribute
 }
 
 export class Database<
@@ -91,21 +97,26 @@ export class DatabaseBuilder<
 export class Table<
     Name extends string,
     Attributes extends IAttributes,
+    PrimaryKeys extends IPrimaryKeys,
 > {
     public static readonly [type] : unique symbol = Symbol(`sql.Table`)
 
-    public readonly name : Name
-    public readonly attributes : Attributes
+    public readonly name         : Name
+    public readonly attributes   : Attributes
+    public readonly primary_keys : PrimaryKeys
 
     public constructor({
         name,
         attributes,
+        primary_keys,
     } : {
-        name : Name
-        attributes : Attributes
+        name         : Name
+        attributes   : Attributes
+        primary_keys : PrimaryKeys
     }) {
-        this.name = name
-        this.attributes = attributes
+        this.name         = name
+        this.attributes   = attributes
+        this.primary_keys = primary_keys
     }
 
     public get [type]() : typeof Table[typeof type] {
@@ -166,25 +177,34 @@ export class TableBuilder<
         const table = new Table({
             name : current_table.name,
             attributes,
+            primary_keys : current_table.primary_keys,
         })
         const tables = {
             ...this.database.tables,
             [this.current] : table,
         } as ExtendedTables<
             Database_[`tables`],
-            Table<Name, ExtendedAttributes<
-                Database_[`tables`][Name][`attributes`],
-                Attribute<AttributeName, Type_>
-            >>
+            Table<
+                Name,
+                ExtendedAttributes<
+                    Database_[`tables`][Name][`attributes`],
+                    Attribute<AttributeName, Type_>
+                >,
+                Database_[`tables`][Name][`primary_keys`]
+            >
         >
         const database = new Database<
             Database_[`name`],
             ExtendedTables<
                 Database_[`tables`],
-                Table<Name, ExtendedAttributes<
-                    Database_[`tables`][Name][`attributes`],
-                    Attribute<AttributeName, Type_>
-                >>
+                Table<
+                    Name,
+                    ExtendedAttributes<
+                        Database_[`tables`][Name][`attributes`],
+                        Attribute<AttributeName, Type_>
+                    >,
+                    Database_[`tables`][Name][`primary_keys`]
+                >
             >
         >({
             name : this.database.name,
@@ -229,6 +249,31 @@ export class Attribute<
     }
 }
 
+export class PrimaryKey<
+    Name extends string,
+    Type_ extends Type,
+> {
+    public static readonly [type] : unique symbol = Symbol(`sql.PrimaryKey`)
+
+    public readonly name : Name
+    public readonly type : Type_
+
+    public constructor({
+        name,
+        type,
+    } : {
+        name : Name
+        type : Type_
+    }) {
+        this.name = name
+        this.type = type
+    }
+
+    public get [type]() : typeof PrimaryKey[typeof type] {
+        return PrimaryKey[type]
+    }
+}
+
 /**
  * Creates an empty database.
  */
@@ -251,7 +296,8 @@ function add_empty_table<
     name : Name,
 ) {
     const attributes = {} as const
-    const table = new Table({ name, attributes })
+    const primary_keys = {} as const
+    const table = new Table({ name, attributes, primary_keys })
     const new_database = new Database<
         Database_[`name`],
         ExtendedTables<Database_[`tables`], EmptyTable<Name>>
