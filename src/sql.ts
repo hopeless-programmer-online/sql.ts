@@ -32,6 +32,22 @@ export type ExtendedAttributes<
     [name in Attribute_[`name`]] : Attribute_
 }
 
+export type AttributeExtendedDatabaseTables<
+    Database_ extends IDatabase,
+    Table_ extends string & keyof Database_[`tables`],
+    Attribute_ extends IAttribute
+> = ExtendedTables<
+    Database_[`tables`],
+    Table<
+        Table_,
+        ExtendedAttributes<
+            Database_[`tables`][Table_][`attributes`],
+            Attribute_
+        >,
+        Database_[`tables`][Table_][`primary_keys`]
+    >
+>
+
 export type IPrimaryKey = PrimaryKey<string, Type>
 
 export type IPrimaryKeys = {
@@ -182,29 +198,15 @@ export class TableBuilder<
         const tables = {
             ...this.database.tables,
             [this.current] : table,
-        } as ExtendedTables<
-            Database_[`tables`],
-            Table<
-                Name,
-                ExtendedAttributes<
-                    Database_[`tables`][Name][`attributes`],
-                    Attribute<AttributeName, Type_>
-                >,
-                Database_[`tables`][Name][`primary_keys`]
-            >
+        } as AttributeExtendedDatabaseTables<
+            Database_, Name,
+            Attribute<AttributeName, Type_>
         >
         const database = new Database<
             Database_[`name`],
-            ExtendedTables<
-                Database_[`tables`],
-                Table<
-                    Name,
-                    ExtendedAttributes<
-                        Database_[`tables`][Name][`attributes`],
-                        Attribute<AttributeName, Type_>
-                    >,
-                    Database_[`tables`][Name][`primary_keys`]
-                >
+            AttributeExtendedDatabaseTables<
+                Database_, Name,
+                Attribute<AttributeName, Type_>
             >
         >({
             name : this.database.name,
