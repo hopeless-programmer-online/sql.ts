@@ -607,8 +607,35 @@ export class SelectionQuery<
 
         return query
     }
-    public where(filter : WhereFilter<Connection_[`database`]>) {
-        // @todo
+    public where(filter : WhereFilter<Connection_[`database`]>) : FilterQuery<
+        Connection_,
+        Selected,
+        BooleanExpression<Type>
+    > {
+        const { connection, selected } = this
+        const proxy = Object.fromEntries(
+            Object.entries(connection.database.tables)
+            .map(([ table, { attributes } ]) => [
+                table, Object.fromEntries(
+                    Object.entries(attributes)
+                    .map(([ attribute, { type } ]) => [
+                        attribute, new AttributeExpression({
+                            type,
+                            attribute,
+                            table,
+                        })
+                    ])
+                )
+            ])
+        ) as DatabaseWhereProxy<Connection_[`database`]>
+        const expression = filter(proxy)
+        const query = new FilterQuery({
+            connection,
+            selected,
+            expression,
+        })
+
+        return query
     }
 }
 
@@ -683,30 +710,35 @@ export class EqualsExpression<
     }
 }
 
-// export class FilterQuery<
-//     Connection_ extends IConnection,
-//     Selected extends ISelection[],
-// > {
-//     public static readonly [type] : unique symbol = Symbol(`sql.FilterQuery`)
-//
-//     public readonly connection : Connection_
-//     public readonly selected   : Selected
-//
-//     public constructor({
-//         connection,
-//         selected,
-//     } : {
-//         connection : Connection_
-//         selected   : Selected
-//     }) {
-//         this.connection = connection
-//         this.selected   = selected
-//     }
-//
-//     public get [type]() : typeof FilterQuery[typeof type] {
-//         return FilterQuery[type]
-//     }
-// }
+export class FilterQuery<
+    Connection_ extends IConnection,
+    Selected extends ISelection[],
+    Expression_ extends BooleanExpression<Type>,
+> {
+    public static readonly [type] : unique symbol = Symbol(`sql.FilterQuery`)
+
+    public readonly connection : Connection_
+    public readonly selected   : Selected
+    public readonly expression : Expression_
+
+    public constructor({
+        connection,
+        selected,
+        expression,
+    } : {
+        connection : Connection_
+        selected   : Selected
+        expression : Expression_
+    }) {
+        this.connection = connection
+        this.selected   = selected
+        this.expression = expression
+    }
+
+    public get [type]() : typeof FilterQuery[typeof type] {
+        return FilterQuery[type]
+    }
+}
 
 /**
  * Creates an empty database.
