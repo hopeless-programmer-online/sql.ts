@@ -1,3 +1,5 @@
+import * as sqlite from 'sqlite3'
+
 export const type = Symbol(`sql.type`)
 
 export type IDatabase = Database<string, ITables>
@@ -117,7 +119,7 @@ export type ForeignKeyExtendedDatabaseTables<
     >
 >
 
-export type IConnection = Connection<IDatabase>
+export type IConnection = DatabaseConnection<IDatabase>
 
 export type ISelection = Selection<string, string>
 
@@ -187,8 +189,47 @@ export class Database<
         return Database[type]
     }
 
-    public connect(path : string) : Connection<Database<Name, Tables>> {
-        const connection = new Connection({ database : this })
+    public async connect(path : string) : Promise<DatabaseConnection<Database<Name, Tables>>> {
+        const driver = new sqlite.Database(path)
+
+        for (const table of Object.values(this.tables)) {
+            const primary_keys = Object.values(table.primary_keys)
+                .map(x => `${table.name}_${x.name} ${
+                    x.type === Type.Integer ? `INTEGER` :
+                    x.type === Type.Text    ? `TEXT` :
+                    ((never : never) => { throw new Error })(x.type) // @todo
+                } PRIMARY KEY`)
+            const attributes = Object.values(table.attributes)
+                .filter(x => !Object.values(table.primary_keys).find(y => x.name === y.name))
+                .map(x => `${table.name}_${x.name} ${
+                    x.type === Type.Integer ? `INTEGER` :
+                    x.type === Type.Text    ? `TEXT` :
+                    ((never : never) => { throw new Error })(x.type) // @todo
+                }`)
+            const foreign_keys = Object.values(table.foreign_keys)
+                .map(x => `FOREIGN KEY (${table.name}_${x.name}) REFERENCES ${x.table} (${x.table}_${x.attribute})`)
+            let all = [ ...primary_keys, ...attributes, ...foreign_keys ]
+                .map(x => `  ${x}`)
+                .join(`,\n`)
+
+            if (all) all = `\n${all}\n`
+
+            const command = `CREATE TABLE IF NOT EXISTS ${table.name} (${all})`
+
+            // console.log(command)
+
+            await new Promise<void>((resolve, reject) => {
+                driver.exec(command, error => {
+                    if (error) return reject(error)
+
+                    resolve()
+                })
+            })
+
+            // console.log(`Table ${table.name} created.`)
+        }
+
+        const connection = new DatabaseConnection({ database : this, driver })
 
         return connection
     }
@@ -502,23 +543,48 @@ export class ForeignKey<
     }
 }
 
-export class Connection<
+export class DatabaseConnection<
     Database_ extends IDatabase,
 > {
     public static readonly [type] : unique symbol = Symbol(`sql.Connection`)
 
     public readonly database : Database_
+    public readonly driver   : sqlite.Database
 
     public constructor({
         database,
+        driver,
     } : {
         database : Database_
+        driver   : sqlite.Database
     }) {
         this.database = database
+        this.driver   = driver
     }
 
-    public get [type]() : typeof Connection[typeof type] {
-        return Connection[type]
+    public get [type]() : typeof DatabaseConnection[typeof type] {
+        return DatabaseConnection[type]
+    }
+    public get tables() : {
+        [name in string & keyof Database_[`tables`]] : TableConnection<
+            DatabaseConnection<Database_>,
+            name
+        >
+    } {
+        return Object.fromEntries(
+            Object.entries(this.database.tables)
+            .map(([ name ]) => [ name,
+                new TableConnection({
+                    database : this,
+                    name,
+                }),
+            ])
+        ) as unknown as {
+            [name in string & keyof Database_[`tables`]] : TableConnection<
+                DatabaseConnection<Database_>,
+                name
+            >
+        }
     }
 
     public select<
@@ -527,7 +593,7 @@ export class Connection<
     >(
         table : Table_,
         attribute : Attribute_,
-    ) : SelectionQuery<Connection<Database_>, [ Selection<Table_, Attribute_> ]> {
+    ) : SelectionQuery<DatabaseConnection<Database_>, [ Selection<Table_, Attribute_> ]> {
         const selected = [
             new Selection({ table, attribute }),
         ] as [ Selection<Table_, Attribute_> ]
@@ -537,6 +603,72 @@ export class Connection<
         })
 
         return query
+    }
+}
+
+type TableConnectionAttributes<
+    Database_ extends DatabaseConnection<IDatabase>,
+    Name extends string & keyof Database_[`database`][`tables`],
+> = Database_[`database`][`tables`][Name][`attributes`][keyof Database_[`database`][`tables`][Name][`attributes`]]
+
+type AttributeInternalType<
+    Type_ extends Type,
+> =
+    Type_ extends Type.Integer ? number :
+    Type_ extends Type.Text ? string :
+    any
+
+export class TableConnection<
+    Database_ extends DatabaseConnection<IDatabase>,
+    Name extends string & keyof Database_[`database`][`tables`],
+> {
+    public static readonly [type] : unique symbol = Symbol(`sql.TableConnection`)
+
+    public readonly database : Database_
+    public readonly name     : Name
+
+    public constructor({
+        database,
+        name,
+    } : {
+        database : Database_
+        name     : Name
+    }) {
+        this.database = database
+        this.name     = name
+    }
+
+    public get [type]() : typeof TableConnection[typeof type] {
+        return TableConnection[type]
+    }
+
+    public async insert(json : Readonly<{
+        [attribute in TableConnectionAttributes<Database_, Name> as attribute[`name`]] : AttributeInternalType<attribute[`type`]>
+    }>) {
+        const table = this.database.database.tables[this.name] as Database_[`database`][`tables`][Name]
+
+        const fields = Object.keys(table.attributes)
+            .map(x => `${this.name}_${x}`)
+            .join(`, `)
+
+        const values = Object.entries(table.attributes)
+            .map(([ name ]) => json[name as keyof typeof json])
+            .map(x => JSON.stringify(x))
+            .join(`, `)
+
+        const command = (
+            `INSERT INTO ${this.name} (${fields}) VALUES (${values})`
+        )
+
+        // console.log(command)
+
+        await new Promise<void>((resolve, reject) => {
+            this.database.driver.exec(command, error => {
+                if (error) return reject(error)
+
+                resolve()
+            })
+        })
     }
 }
 
@@ -562,6 +694,10 @@ export class Selection<
 
     public get [type]() : typeof Selection[typeof type] {
         return Selection[type]
+    }
+
+    public toString() {
+        return `${this.table}_${this.attribute}`
     }
 }
 
@@ -595,7 +731,7 @@ export class SelectionQuery<
     >(
         table : Table_,
         attribute : Attribute_,
-    ) : SelectionQuery<Connection<Connection_[`database`]>, [ ...Selected, Selection<Table_, Attribute_> ]> {
+    ) : SelectionQuery<DatabaseConnection<Connection_[`database`]>, [ ...Selected, Selection<Table_, Attribute_> ]> {
         const selected = [
             ...this.selected,
             new Selection({ table, attribute }),
@@ -684,7 +820,7 @@ export class AttributeExpression<
     }
 
     public toString() {
-        return `${this.table}.${this.attribute}`
+        return `${this.table}_${this.attribute}`
     }
 }
 
@@ -747,9 +883,11 @@ export class FilterQuery<
         return FilterQuery[type]
     }
 
+    public async run() {
+        //
+    }
     public toString() {
         const columns = this.selected
-            .map(x => `${x.table}.${x.attribute}`)
             .join(`, `)
         const tables = this.selected
             .reduce<string[]>((a, x) => a.includes(x.table) ? a : [ ...a, x.table ], [])

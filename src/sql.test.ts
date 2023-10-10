@@ -1,6 +1,6 @@
 import * as sql from './sql'
 
-test(`Smoke.`, () => {
+test(`Smoke.`, async () => {
     const db = sql.database(`FORUM`)
         .table(`User`)
             .primary_key(`id`, sql.Type.Integer)
@@ -91,7 +91,7 @@ test(`Smoke.`, () => {
     expect(post_table_text_attribute_name).toBe(`text`)
     expect(post_table_text_attribute_type).toBe(sql.Type.Text)
 
-    const connection = db.connect(`:memory:`)
+    const connection = await db.connect(`:memory:`)
 
     const query = connection
         .select(`User`, `login`)
@@ -99,8 +99,8 @@ test(`Smoke.`, () => {
         .where(db => db.Topic.author_id.equals(db.User.id))
 
     expect(`${query}`).toBe(
-        `SELECT User.login, Topic.caption\n` +
+        `SELECT User_login, Topic_caption\n` +
         `FROM User, Topic\n` +
-        `WHERE Topic.author_id = User.id`
+        `WHERE Topic_author_id = User_id`
     )
 })
