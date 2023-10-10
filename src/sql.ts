@@ -210,19 +210,19 @@ export class Table<
 
 export class TableBuilder<
     Database_ extends IDatabase,
-    Name extends string & keyof Database_[`tables`], // @todo: rename as Current
+    Current_ extends string & keyof Database_[`tables`],
 > {
     public static readonly [type] : unique symbol = Symbol(`sql.DatabaseBuilder`)
 
     public readonly database : Database_
-    public readonly current : Name
+    public readonly current : Current_
 
     public constructor({
         database,
         current,
     } : {
         database : Database_
-        current : Name
+        current : Current_
     }) {
         this.database = database
         this.current = current
@@ -265,7 +265,7 @@ export class TableBuilder<
             ...this.database.tables,
             [this.current] : table,
         } as AttributeExtendedDatabaseTables<
-            Database_, Name,
+            Database_, Current_,
             Attribute<AttributeName, Type_>
         >
         const database = new Database({
@@ -307,7 +307,7 @@ export class TableBuilder<
             ...this.database.tables,
             [this.current] : table,
         } as PrimaryKeyExtendedDatabaseTables<
-            Database_, Name,
+            Database_, Current_,
             Attribute<AttributeName, Type_>
         >
         const database = new Database({
@@ -351,7 +351,7 @@ export class TableBuilder<
         const tables = {
             ...this.database.tables,
             [this.current] : table_,
-        } as ForeignKeyExtendedDatabaseTables<Database_, Name, AttributeName, Table_, PrimaryKey_>
+        } as ForeignKeyExtendedDatabaseTables<Database_, Current_, AttributeName, Table_, PrimaryKey_>
         const database = new Database({
             name : this.database.name as Database_[`name`],
             tables,
@@ -492,12 +492,3 @@ function add_empty_table<
 
     return builder
 }
-
-// function f(x : ForeignKeyExtendedDatabaseTables<
-//     Database<`DB`, { Tbl : Table<`Tbl`, {}, { pk : PrimaryKey<`pk`, typeof Type.Text> }, {}> }>,
-//     `fk`,
-//     `Tbl`,
-//     `pk`
-// >) {
-//     x.Tbl.foreign_keys.fk
-// }
