@@ -117,6 +117,10 @@ export type ForeignKeyExtendedDatabaseTables<
     >
 >
 
+export type IConnection = Connection<IDatabase>
+
+export type ISelection = Selection<string, string>
+
 export class Database<
     Name extends string,
     Tables extends ITables,
@@ -473,6 +477,93 @@ export class Connection<
 
     public get [type]() : typeof Connection[typeof type] {
         return Connection[type]
+    }
+
+    public select<
+        Table_ extends string & keyof Database_[`tables`],
+        Attribute_ extends string & keyof Database_[`tables`][Table_][`attributes`],
+    >(
+        table : Table_,
+        attribute : Attribute_,
+    ) : SelectionQuery<Connection<Database_>, [ Selection<Table_, Attribute_> ]> {
+        const selected = [
+            new Selection({ table, attribute }),
+        ] as [ Selection<Table_, Attribute_> ]
+        const query = new SelectionQuery({
+            connection : this,
+            selected,
+        })
+
+        return query
+    }
+}
+
+export class Selection<
+    Table_ extends string,
+    Attribute_ extends string,
+> {
+    public static readonly [type] : unique symbol = Symbol(`sql.Selection`)
+
+    public readonly table     : Table_
+    public readonly attribute : Attribute_
+
+    public constructor({
+        table,
+        attribute,
+    } : {
+        table     : Table_
+        attribute : Attribute_
+    }) {
+        this.table     = table
+        this.attribute = attribute
+    }
+
+    public get [type]() : typeof Selection[typeof type] {
+        return Selection[type]
+    }
+}
+
+export class SelectionQuery<
+    Connection_ extends IConnection,
+    Selected extends ISelection[]
+> {
+    public static readonly [type] : unique symbol = Symbol(`sql.SelectionQuery`)
+
+    public readonly connection : Connection_
+    public readonly selected   : Selected
+
+    public constructor({
+        connection,
+        selected,
+    } : {
+        connection : Connection_
+        selected   : Selected
+    }) {
+        this.connection = connection
+        this.selected   = selected
+    }
+
+    public get [type]() : typeof SelectionQuery[typeof type] {
+        return SelectionQuery[type]
+    }
+
+    public select<
+        Table_ extends string & keyof Connection_[`database`][`tables`],
+        Attribute_ extends string & keyof Connection_[`database`][`tables`][Table_][`attributes`],
+    >(
+        table : Table_,
+        attribute : Attribute_,
+    ) : SelectionQuery<Connection<Connection_[`database`]>, [ ...Selected, Selection<Table_, Attribute_> ]> {
+        const selected = [
+            ...this.selected,
+            new Selection({ table, attribute }),
+        ] as [ ...Selected, Selection<Table_, Attribute_> ]
+        const query = new SelectionQuery({
+            connection : this.connection,
+            selected,
+        })
+
+        return query
     }
 }
 

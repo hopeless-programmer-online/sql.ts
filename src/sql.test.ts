@@ -92,4 +92,8 @@ test(`Smoke.`, () => {
     expect(post_table_text_attribute_type).toBe(sql.Type.Text)
 
     const connection = db.connect(`:memory:`)
+
+    const query = connection
+        .select(`User`, `login`)
+        .select(`Topic`, `caption`)
 })
