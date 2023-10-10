@@ -682,6 +682,10 @@ export class AttributeExpression<
             right,
         })
     }
+
+    public toString() {
+        return `${this.table}.${this.attribute}`
+    }
 }
 
 export class EqualsExpression<
@@ -707,6 +711,10 @@ export class EqualsExpression<
 
     public get [type]() : typeof EqualsExpression[typeof type] {
         return EqualsExpression[type]
+    }
+
+    public toString() {
+        return `${this.left} = ${this.right}`
     }
 }
 
@@ -737,6 +745,22 @@ export class FilterQuery<
 
     public get [type]() : typeof FilterQuery[typeof type] {
         return FilterQuery[type]
+    }
+
+    public toString() {
+        const columns = this.selected
+            .map(x => `${x.table}.${x.attribute}`)
+            .join(`, `)
+        const tables = this.selected
+            .reduce<string[]>((a, x) => a.includes(x.table) ? a : [ ...a, x.table ], [])
+            .join(`, `)
+        const text = (
+            `SELECT ${columns}\n` +
+            `FROM ${tables}\n` +
+            `WHERE ${this.expression}`
+        )
+
+        return text
     }
 }
 

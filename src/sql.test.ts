@@ -97,4 +97,10 @@ test(`Smoke.`, () => {
         .select(`User`, `login`)
         .select(`Topic`, `caption`)
         .where(db => db.Topic.author_id.equals(db.User.id))
+
+    expect(`${query}`).toBe(
+        `SELECT User.login, Topic.caption\n` +
+        `FROM User, Topic\n` +
+        `WHERE Topic.author_id = User.id`
+    )
 })
