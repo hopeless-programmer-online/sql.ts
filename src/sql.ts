@@ -140,6 +140,12 @@ export class Database<
     public get [type]() : typeof Database[typeof type] {
         return Database[type]
     }
+
+    public connect(path : string) : Connection<Database<Name, Tables>> {
+        const connection = new Connection({ database : this })
+
+        return connection
+    }
 }
 
 export class DatabaseBuilder<
@@ -447,6 +453,26 @@ export class ForeignKey<
 
     public get [type]() : typeof ForeignKey[typeof type] {
         return ForeignKey[type]
+    }
+}
+
+export class Connection<
+    Database_ extends IDatabase,
+> {
+    public static readonly [type] : unique symbol = Symbol(`sql.Connection`)
+
+    public readonly database : Database_
+
+    public constructor({
+        database,
+    } : {
+        database : Database_
+    }) {
+        this.database = database
+    }
+
+    public get [type]() : typeof Connection[typeof type] {
+        return Connection[type]
     }
 }
 

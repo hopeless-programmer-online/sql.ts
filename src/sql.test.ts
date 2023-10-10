@@ -90,4 +90,6 @@ test(`Smoke.`, () => {
     expect(post_table_author_id_attribute_type).toBe(sql.Type.Integer)
     expect(post_table_text_attribute_name).toBe(`text`)
     expect(post_table_text_attribute_type).toBe(sql.Type.Text)
+
+    const connection = db.connect(`:memory:`)
 })
