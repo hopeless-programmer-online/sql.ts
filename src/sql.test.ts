@@ -96,4 +96,5 @@ test(`Smoke.`, () => {
     const query = connection
         .select(`User`, `login`)
         .select(`Topic`, `caption`)
+        .where(db => db.Topic.author_id.equals(db.User.id))
 })

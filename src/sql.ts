@@ -121,6 +121,48 @@ export type IConnection = Connection<IDatabase>
 
 export type ISelection = Selection<string, string>
 
+export type IAttributeExpression<
+    Type_ extends Type,
+> = AttributeExpression<Type_, string, string>
+
+export type SimpleExpression<
+    Type_ extends Type,
+> = IAttributeExpression<Type_>
+
+export type IEqualsExpression<
+    Type_ extends Type,
+> = EqualsExpression<Type_, Expression<Type_>, Expression<Type_>>
+
+export type BooleanExpression<
+    Type_ extends Type,
+> = IEqualsExpression<Type_>
+
+export type Expression<
+    Type_ extends Type,
+> = SimpleExpression<Type_> | BooleanExpression<Type_>
+
+export type DatabaseWhereProxy<
+    Database_ extends IDatabase
+> = {
+    [table in Database_[`tables`][keyof Database_[`tables`]] as table[`name`]] : TableWhereProxy<table>
+}
+
+export type TableWhereProxy<
+    Table_ extends ITable,
+> = {
+    [attribute in Table_[`attributes`][keyof Table_[`attributes`]] as attribute[`name`]] : AttributeExpression<
+        attribute[`type`],
+        Table_[`name`],
+        attribute[`name`]
+    >
+}
+
+export type WhereFilter<
+    Database_ extends IDatabase,
+> = (
+    proxy : DatabaseWhereProxy<Database_>
+) => BooleanExpression<Type>
+
 export class Database<
     Name extends string,
     Tables extends ITables,
@@ -525,7 +567,7 @@ export class Selection<
 
 export class SelectionQuery<
     Connection_ extends IConnection,
-    Selected extends ISelection[]
+    Selected extends ISelection[],
 > {
     public static readonly [type] : unique symbol = Symbol(`sql.SelectionQuery`)
 
@@ -565,7 +607,106 @@ export class SelectionQuery<
 
         return query
     }
+    public where(filter : WhereFilter<Connection_[`database`]>) {
+        // @todo
+    }
 }
+
+export class AttributeExpression<
+    Type_ extends Type,
+    Table_ extends string,
+    Attribute_ extends string,
+> {
+    public static readonly [type] : unique symbol = Symbol(`sql.AttributeExpression`)
+
+    public readonly type      : Type_
+    public readonly table     : Table_
+    public readonly attribute : Attribute_
+
+    public constructor({
+        type,
+        table,
+        attribute,
+    } : {
+        type      : Type_
+        table     : Table_
+        attribute : Attribute_
+    }) {
+        this.type      = type
+        this.table     = table
+        this.attribute = attribute
+    }
+
+    public get [type]() : typeof AttributeExpression[typeof type] {
+        return AttributeExpression[type]
+    }
+
+    public equals<
+        Right extends Expression<Type_>,
+    >(
+        right : Right,
+    ) : EqualsExpression<
+        Type_,
+        AttributeExpression<Type_, Table_, Attribute_>,
+        Right
+    > {
+        return new EqualsExpression({
+            left : this,
+            right,
+        })
+    }
+}
+
+export class EqualsExpression<
+    Type_ extends Type,
+    Left extends Expression<Type_>,
+    Right extends Expression<Type_>,
+> {
+    public static readonly [type] : unique symbol = Symbol(`sql.EqualsExpression`)
+
+    public readonly left  : Left
+    public readonly right : Right
+
+    public constructor({
+        left,
+        right,
+    } : {
+        left  : Left
+        right : Right
+    }) {
+        this.left  = left
+        this.right = right
+    }
+
+    public get [type]() : typeof EqualsExpression[typeof type] {
+        return EqualsExpression[type]
+    }
+}
+
+// export class FilterQuery<
+//     Connection_ extends IConnection,
+//     Selected extends ISelection[],
+// > {
+//     public static readonly [type] : unique symbol = Symbol(`sql.FilterQuery`)
+//
+//     public readonly connection : Connection_
+//     public readonly selected   : Selected
+//
+//     public constructor({
+//         connection,
+//         selected,
+//     } : {
+//         connection : Connection_
+//         selected   : Selected
+//     }) {
+//         this.connection = connection
+//         this.selected   = selected
+//     }
+//
+//     public get [type]() : typeof FilterQuery[typeof type] {
+//         return FilterQuery[type]
+//     }
+// }
 
 /**
  * Creates an empty database.
