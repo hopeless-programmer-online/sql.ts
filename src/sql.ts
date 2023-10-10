@@ -2,7 +2,7 @@ export const type = Symbol(`sql.type`)
 
 export type IDatabase = Database<string, ITables>
 
-export type ITable = Table<string, IAttributes, IPrimaryKeys>
+export type ITable = Table<string, IAttributes, IPrimaryKeys, IForeignKeys>
 
 export type ITables = {
     [name : string] : ITable
@@ -10,7 +10,7 @@ export type ITables = {
 
 export type EmptyTable<
     Name extends string,
-> = Table<Name, {}, {}>
+> = Table<Name, {}, {}, {}>
 
 export type ExtendedTables<
     Tables extends ITables,
@@ -44,7 +44,8 @@ export type AttributeExtendedDatabaseTables<
             Database_[`tables`][Table_][`attributes`],
             Attribute_
         >,
-        Database_[`tables`][Table_][`primary_keys`]
+        Database_[`tables`][Table_][`primary_keys`],
+        Database_[`tables`][Table_][`foreign_keys`]
     >
 >
 
@@ -76,6 +77,42 @@ export type PrimaryKeyExtendedDatabaseTables<
         ExtendedPrimaryKeys<
             Database_[`tables`][Table_][`primary_keys`],
             PrimaryKey<Attribute_[`name`], Attribute_[`type`]>
+        >,
+        Database_[`tables`][Table_][`foreign_keys`]
+    >
+>
+
+export type IForeignKey = ForeignKey<string, string, string>
+
+export type IForeignKeys = {
+    [name : string] : IForeignKey
+}
+
+export type ExtendedForeignKeys<
+    ForeignKeys_ extends IForeignKeys,
+    ForeignKey_ extends IForeignKey,
+> = ForeignKeys_ & {
+    [name in ForeignKey_[`name`]] : ForeignKey_
+}
+
+export type ForeignKeyExtendedDatabaseTables<
+    Database_ extends IDatabase,
+    Current_ extends string & keyof Database_[`tables`],
+    Name_ extends string,
+    Table_ extends string & keyof Database_[`tables`],
+    Attribute_ extends string & keyof Database_[`tables`][Table_][`primary_keys`]
+> = ExtendedTables<
+    Database_[`tables`],
+    Table<
+        Current_,
+        ExtendedAttributes<
+            Database_[`tables`][Current_][`attributes`],
+            Attribute<Name_, Database_[`tables`][Table_][`primary_keys`][Attribute_][`type`]>
+        >,
+        Database_[`tables`][Current_][`primary_keys`],
+        ExtendedForeignKeys<
+            Database_[`tables`][Current_][`foreign_keys`],
+            ForeignKey<Name_, Table_, Attribute_>
         >
     >
 >
@@ -140,25 +177,30 @@ export class Table<
     Name extends string,
     Attributes extends IAttributes,
     PrimaryKeys extends IPrimaryKeys,
+    ForeignKeys extends IForeignKeys,
 > {
     public static readonly [type] : unique symbol = Symbol(`sql.Table`)
 
     public readonly name         : Name
     public readonly attributes   : Attributes
     public readonly primary_keys : PrimaryKeys
+    public readonly foreign_keys : ForeignKeys
 
     public constructor({
         name,
         attributes,
         primary_keys,
+        foreign_keys,
     } : {
         name         : Name
         attributes   : Attributes
         primary_keys : PrimaryKeys
+        foreign_keys : ForeignKeys
     }) {
         this.name         = name
         this.attributes   = attributes
         this.primary_keys = primary_keys
+        this.foreign_keys = foreign_keys
     }
 
     public get [type]() : typeof Table[typeof type] {
@@ -168,7 +210,7 @@ export class Table<
 
 export class TableBuilder<
     Database_ extends IDatabase,
-    Name extends string & keyof Database_[`tables`],
+    Name extends string & keyof Database_[`tables`], // @todo: rename as Current
 > {
     public static readonly [type] : unique symbol = Symbol(`sql.DatabaseBuilder`)
 
@@ -217,6 +259,7 @@ export class TableBuilder<
             name : current_table.name,
             attributes,
             primary_keys : current_table.primary_keys,
+            foreign_keys : current_table.foreign_keys,
         })
         const tables = {
             ...this.database.tables,
@@ -258,6 +301,7 @@ export class TableBuilder<
             name : current_table.name,
             attributes,
             primary_keys,
+            foreign_keys : current_table.foreign_keys,
         })
         const tables = {
             ...this.database.tables,
@@ -266,6 +310,48 @@ export class TableBuilder<
             Database_, Name,
             Attribute<AttributeName, Type_>
         >
+        const database = new Database({
+            name : this.database.name as Database_[`name`],
+            tables,
+        })
+        const builder = new TableBuilder({
+            database,
+            current : this.current,
+        })
+
+        return builder
+    }
+    public foreign_key<
+        AttributeName extends string,
+        Table_ extends string & keyof Database_[`tables`],
+        PrimaryKey_ extends string & keyof Database_[`tables`][Table_][`primary_keys`],
+    >(
+        name : AttributeName,
+        table : Table_,
+        attribute : PrimaryKey_,
+    ) {
+        const { type } = this.database.tables[table].attributes[attribute]
+        const attribute_ = new Attribute({ name, type })
+        const foreign_key = new ForeignKey({ name, table, attribute })
+        const current_table = this.database.tables[this.current]
+        const attributes = {
+            ...current_table.attributes,
+            [name] : attribute_,
+        }
+        const foreign_keys = {
+            ...current_table.foreign_keys,
+            [name] : foreign_key,
+        }
+        const table_ = new Table({
+            name : current_table.name,
+            attributes,
+            primary_keys : current_table.primary_keys,
+            foreign_keys,
+        })
+        const tables = {
+            ...this.database.tables,
+            [this.current] : table_,
+        } as ForeignKeyExtendedDatabaseTables<Database_, Name, AttributeName, Table_, PrimaryKey_>
         const database = new Database({
             name : this.database.name as Database_[`name`],
             tables,
@@ -334,6 +420,36 @@ export class PrimaryKey<
     }
 }
 
+export class ForeignKey<
+    Name extends string,
+    Table_ extends string,
+    Attribute_ extends string
+> {
+    public static readonly [type] : unique symbol = Symbol(`sql.ForeignKey`)
+
+    public readonly name      : Name
+    public readonly table     : Table_
+    public readonly attribute : Attribute_
+
+    public constructor({
+        name,
+        table,
+        attribute,
+    } : {
+        name      : Name
+        table     : Table_
+        attribute : Attribute_
+    }) {
+        this.name      = name
+        this.table     = table
+        this.attribute = attribute
+    }
+
+    public get [type]() : typeof ForeignKey[typeof type] {
+        return ForeignKey[type]
+    }
+}
+
 /**
  * Creates an empty database.
  */
@@ -357,7 +473,8 @@ function add_empty_table<
 ) {
     const attributes = {} as const
     const primary_keys = {} as const
-    const table = new Table({ name, attributes, primary_keys })
+    const foreign_keys = {} as const
+    const table = new Table({ name, attributes, primary_keys, foreign_keys })
     const new_database = new Database<
         Database_[`name`],
         ExtendedTables<Database_[`tables`], EmptyTable<Name>>
@@ -375,3 +492,12 @@ function add_empty_table<
 
     return builder
 }
+
+// function f(x : ForeignKeyExtendedDatabaseTables<
+//     Database<`DB`, { Tbl : Table<`Tbl`, {}, { pk : PrimaryKey<`pk`, typeof Type.Text> }, {}> }>,
+//     `fk`,
+//     `Tbl`,
+//     `pk`
+// >) {
+//     x.Tbl.foreign_keys.fk
+// }

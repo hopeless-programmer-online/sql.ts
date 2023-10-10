@@ -7,12 +7,12 @@ test(`Smoke.`, () => {
             .attribute(`login`, sql.Type.Text)
         .table(`Topic`)
             .primary_key(`id`, sql.Type.Integer)
-            .attribute(`author_id`, sql.Type.Integer)
+            .foreign_key(`author_id`, `User`, `id`)
             .attribute(`caption`, sql.Type.Text)
             .attribute(`text`, sql.Type.Text)
         .table(`Post`)
             .primary_key(`id`, sql.Type.Integer)
-            .attribute(`author_id`, sql.Type.Integer)
+            .foreign_key(`author_id`, `User`, `id`)
             .attribute(`text`, sql.Type.Text)
         .end()
 
@@ -41,18 +41,19 @@ test(`Smoke.`, () => {
     expect(user_table_login_attribute_name).toBe(`login`)
     expect(user_table_login_attribute_type).toBe(sql.Type.Text)
 
-    const topic_table_type                     : typeof sql.Table[typeof sql.type] = db.tables.Topic[sql.type]
-    const topic_table_name                     : `Topic`                           = db.tables.Topic.name
-    const topic_table_id_attribute_name        : `id`                              = db.tables.Topic.attributes.id.name
-    const topic_table_id_attribute_type        : sql.Type.Integer                  = db.tables.Topic.attributes.id.type
-    const topic_table_id_primary_key_name      : `id`                              = db.tables.Topic.primary_keys.id.name
-    const topic_table_id_primary_key_type      : sql.Type.Integer                  = db.tables.Topic.primary_keys.id.type
-    const topic_table_author_id_attribute_name : `author_id`                       = db.tables.Topic.attributes.author_id.name
-    const topic_table_author_id_attribute_type : sql.Type.Integer                  = db.tables.Topic.attributes.author_id.type
-    const topic_table_caption_attribute_name   : `caption`                         = db.tables.Topic.attributes.caption.name
-    const topic_table_caption_attribute_type   : sql.Type.Text                     = db.tables.Topic.attributes.caption.type
-    const topic_table_text_attribute_name      : `text`                            = db.tables.Topic.attributes.text.name
-    const topic_table_text_attribute_type      : sql.Type.Text                     = db.tables.Topic.attributes.text.type
+    const topic_table_type                            : typeof sql.Table[typeof sql.type] = db.tables.Topic[sql.type]
+    const topic_table_name                            : `Topic`                           = db.tables.Topic.name
+    const topic_table_id_attribute_name               : `id`                              = db.tables.Topic.attributes.id.name
+    const topic_table_id_attribute_type               : sql.Type.Integer                  = db.tables.Topic.attributes.id.type
+    const topic_table_id_primary_key_name             : `id`                              = db.tables.Topic.primary_keys.id.name
+    const topic_table_id_primary_key_type             : sql.Type.Integer                  = db.tables.Topic.primary_keys.id.type
+    const topic_table_author_id_foreign_key_name      : `author_id`                       = db.tables.Topic.foreign_keys.author_id.name
+    const topic_table_author_id_foreign_key_table     : `User`                            = db.tables.Topic.foreign_keys.author_id.table
+    const topic_table_author_id_foreign_key_attribute : `id`                              = db.tables.Topic.foreign_keys.author_id.attribute
+    const topic_table_caption_attribute_name          : `caption`                         = db.tables.Topic.attributes.caption.name
+    const topic_table_caption_attribute_type          : sql.Type.Text                     = db.tables.Topic.attributes.caption.type
+    const topic_table_text_attribute_name             : `text`                            = db.tables.Topic.attributes.text.name
+    const topic_table_text_attribute_type             : sql.Type.Text                     = db.tables.Topic.attributes.text.type
 
     expect(topic_table_type).toBe(sql.Table[sql.type])
     expect(topic_table_name).toBe(`Topic`)
@@ -60,8 +61,9 @@ test(`Smoke.`, () => {
     expect(topic_table_id_attribute_type).toBe(sql.Type.Integer)
     expect(topic_table_id_primary_key_name).toBe(`id`)
     expect(topic_table_id_primary_key_type).toBe(sql.Type.Integer)
-    expect(topic_table_author_id_attribute_name).toBe(`author_id`)
-    expect(topic_table_author_id_attribute_type).toBe(sql.Type.Integer)
+    expect(topic_table_author_id_foreign_key_name).toBe(`author_id`)
+    expect(topic_table_author_id_foreign_key_table).toBe(`User`)
+    expect(topic_table_author_id_foreign_key_attribute).toBe(`id`)
     expect(topic_table_caption_attribute_name).toBe(`caption`)
     expect(topic_table_caption_attribute_type).toBe(sql.Type.Text)
     expect(topic_table_text_attribute_name).toBe(`text`)
