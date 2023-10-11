@@ -2,6 +2,10 @@
   "name": "sql.ts",
   "version": "0.1.0",
   "description": "",
+  "main": "./dist/sql.js",
+  "exports": {
+    ".": "./dist/sql.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hopeless-programmer-online/sql.ts.git"
