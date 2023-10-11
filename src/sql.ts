@@ -651,7 +651,7 @@ export class TableConnection<
 
                 const size = (result[0] as any)[`COUNT(*)`] as number
 
-                console.log(size)
+                // console.log(size)
 
                 resolve(size)
             })
@@ -902,7 +902,7 @@ export class FilterQuery<
     public async run() {
         const command = this.toString()
 
-        console.log(command)
+        // console.log(command)
 
         const raw_rows = await new Promise<unknown[]>((resolve, reject) => {
             this.connection.driver.all(command, (error, result) => {
