@@ -884,7 +884,34 @@ export class FilterQuery<
     }
 
     public async run() {
-        //
+        const command = this.toString()
+
+        console.log(command)
+
+        const raw_rows = await new Promise<unknown[]>((resolve, reject) => {
+            this.connection.driver.all(command, (error, result) => {
+                if (error) return reject(error)
+
+                resolve(result)
+            })
+        })
+
+        // console.log(raw_rows)
+
+        const rows = raw_rows.map(row =>
+            this.selected.map(
+                x => (row as any)[`${x.table}_${x.attribute}`]
+            )
+        ) as {
+            [key in keyof Selected] :
+                Connection_[`database`][`tables`][Selected[key][`table`]][`attributes`][Selected[key][`attribute`]][`type`] extends Type.Integer ? number :
+                Connection_[`database`][`tables`][Selected[key][`table`]][`attributes`][Selected[key][`attribute`]][`type`] extends Type.Text    ? string :
+                any
+        }[]
+
+        // console.log(rows)
+
+        return rows
     }
     public toString() {
         const columns = this.selected
