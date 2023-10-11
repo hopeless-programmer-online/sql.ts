@@ -642,6 +642,22 @@ export class TableConnection<
         return TableConnection[type]
     }
 
+    public get size() {
+        return new Promise<number>((resolve, reject) => {
+            const command = `SELECT COUNT(*) FROM ${this.name}`
+
+            this.database.driver.all(command, (error, result) => {
+                if (error) return reject(error)
+
+                const size = (result[0] as any)[`COUNT(*)`] as number
+
+                console.log(size)
+
+                resolve(size)
+            })
+        })
+    }
+
     public async insert(json : Readonly<{
         [attribute in TableConnectionAttributes<Database_, Name> as attribute[`name`]] : AttributeInternalType<attribute[`type`]>
     }>) {
