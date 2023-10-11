@@ -28,6 +28,8 @@
   },
   "license": "MIT",
   "scripts": {
-    "test": "jest"
+    "build" : "tsc",
+    "prepare": "npm run build",
+    "test" : "jest"
   }
 }

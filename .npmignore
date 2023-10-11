@@ -1,0 +1,8 @@
+/.jest
+/node_modules
+/src
+.editorconfig
+jest.config.js
+tsconfig.json
+/**.js
+/**.ts

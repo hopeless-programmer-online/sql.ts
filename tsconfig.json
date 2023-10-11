@@ -1,12 +1,22 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "lib" : [
-        "DOM",
-        "ESNext"
+    "include": [
+        "./src/"
     ],
-    "module": "commonjs",
-    "strict": true,
-    "skipLibCheck": true,
-  }
+    "exclude": [
+        "node_modules",
+        "./src/**/**.test.ts",
+    ],
+    "compilerOptions": {
+        "target": "ES5",
+        "lib": [
+            "DOM",
+            "ESNext"
+        ],
+        "module": "commonjs",
+        "strict": true,
+        "skipLibCheck": true,
+        "outDir": "./dist",
+        "declaration": true,
+        "sourceMap": true,
+    }
 }
