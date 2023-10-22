@@ -106,7 +106,7 @@ export enum Type {
     Text,
 }
 
-class DatabaseConstructor<
+class DatabaseBuilder<
     Database_ extends IDatabase,
 > {
     public readonly database : Database_
@@ -132,7 +132,7 @@ export function database<
     const tables = {} as const
     const database = new Database({ name, tables })
 
-    return new DatabaseConstructor({ database })
+    return new DatabaseBuilder({ database })
 }
 
 // function f<
