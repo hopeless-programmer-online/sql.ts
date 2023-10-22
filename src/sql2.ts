@@ -1,3 +1,5 @@
+type IDatabase = Database<string, TablesOfDatabase<string>>
+
 type TablesOfDatabase<
     Name_ extends string
 > = Readonly<{
@@ -50,17 +52,21 @@ export class Table<
 > {
     public static readonly symbol = Symbol(`sql.Table`)
 
-    public readonly name       : Name_
+    public readonly database : Database_
+    public readonly name     : Name_
     // public readonly attributes : Attributes_
 
     public constructor({
+        database,
         name,
         // attributes,
     } : {
-        name       : Name_
+        database : Database_
+        name     : Name_
         // attributes : Attributes_
     }) {
-        this.name       = name
+        this.database = database
+        this.name     = name
         // this.attributes = attributes
     }
 
@@ -100,6 +106,24 @@ export enum Type {
     Text,
 }
 
+class DatabaseConstructor<
+    Database_ extends IDatabase,
+> {
+    public readonly database : Database_
+
+    public constructor({
+        database,
+    } : {
+        database : Database_
+    }) {
+        this.database = database
+    }
+
+    public end() {
+        return this.database
+    }
+}
+
 export function database<
     Name_ extends string,
 >(
@@ -108,7 +132,7 @@ export function database<
     const tables = {} as const
     const database = new Database({ name, tables })
 
-    return database
+    return new DatabaseConstructor({ database })
 }
 
 // function f<
