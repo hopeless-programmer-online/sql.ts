@@ -145,25 +145,8 @@ class DatabaseBuilder<
         this.database = database
     }
 
-    public table<
-        Name_ extends string,
-    >(name : Name_) {
-        const table = new Table({
-            name,
-        })
-        const tables = {
-            ...Object.fromEntries(
-                Object.entries(this.database.tables)
-                    .map(([ name, table ]) =>
-                        [ name, new Table({ name : table.name }) ]
-                    )
-            ),
-            [name] : table,
-        }
-        const database = new Database({
-            name : this.database.name,
-            tables,
-        }) as TableExtendedDatabase<Database_, Name_>
+    public table<Name_ extends string>(name : Name_) {
+        const database = extend_tables(this.database, name)
 
         return new TableBuilder({
             database,
@@ -193,9 +176,43 @@ class TableBuilder<
         this.current  = current
     }
 
+    public table<Name_ extends string>(name : Name_) {
+        const database = extend_tables(this.database, name)
+
+        return new TableBuilder({
+            database,
+            current : name,
+        })
+    }
     public end() {
         return this.database
     }
+}
+
+function extend_tables<
+    Database_ extends IDatabase,
+    Name_ extends string,
+>(
+    database : Database_,
+    name : Name_,
+) {
+    const table = new Table({
+        name,
+    })
+    const tables = {
+        ...Object.fromEntries(
+            Object.entries(database.tables)
+                .map(([ name, table ]) =>
+                    [ name, new Table({ name : table.name }) ]
+                )
+        ),
+        [name] : table,
+    }
+
+    return new Database({
+        name : database.name,
+        tables,
+    }) as TableExtendedDatabase<Database_, Name_>
 }
 
 export function database<
